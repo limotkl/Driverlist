@@ -2,7 +2,9 @@ import types
 import pandas as pd
 import numpy as np
 import datetime
-import DriverSchedule as ds
+# import DriverSchedule as ds
+import operator
+
 import os
 import csv
 import time
@@ -10,14 +12,14 @@ import datetime
 from math import radians, cos, sin, asin, sqrt, fabs
 
 # select the Driver you want
-DRIVER_ID = 0
+DRIVER_ID = 36 #
 
   
 
 virtialRouteTable = []
 route_dic = {}
 
-with open('virtualScheduleSEP.csv','rU') as csvfile:
+with open('virtualSchedule(1).csv','rU') as csvfile:
         csvreader1 = csv.reader(csvfile)
         for row in csvreader1:
             str1 = ''
@@ -37,7 +39,8 @@ for i in range(1,len(virtialRouteTable)):
             x = a[1].upper()
             route_dic.setdefault(x, []).append(temp)
 
-
+for key in route_dic.keys():
+    print key
 
 #print route_dic['ALPHA']
 #===================================================================
@@ -78,7 +81,7 @@ def convert_ap_pm(date, time):
 #=======================
 virtualTable = []
 dic_driver = {}
-with open('Schedule0918-0924(csv).csv','rU') as csvfile:
+with open('Schedule0911-0917(new).csv','rU') as csvfile:
         csvreader = csv.reader(csvfile)
         for row in csvreader:
             str1 = ''
@@ -97,9 +100,9 @@ for i in range(1,len(virtualTable)):#len(virtualTable)
             temp.append(virtualTable[0][x]) #add date temp =['Rosh Hashanah Alpha', '8:15 AM - 11:30 AM', 'Reece Pyankaroo', '2017/9/21']
             dic_driver.setdefault(temp[2], []).append(temp)
 
-sorted_list = sorted(dic_driver.items(), key=lambda item: len(item[1]), reverse=True)
-#=======================
 
+
+sorted_list = sorted(dic_driver.items(), key=lambda item: len(item[1]), reverse=True)
 
 #########   change driver here   #################
 
@@ -115,8 +118,22 @@ print '======================='
 name = sorted_list[DRIVER_ID][0]
 driver_slots = sorted_list[DRIVER_ID][1]#NO.ith hardest driver schedule
 
+#sort driver_slots according to time
 
-for slot in driver_slots:
+# driver_slots.sort(key=(date_to_timestamp(operator.itemgetter(3) + operator.itemgetter(1).split('-')[0])))
+
+# student_tuples = [
+#         ('john', 'A', 15),
+#         ('jane', 'B', 12),
+#         ('dave', 'B', 10),
+# ]
+# sorted(student_tuples, key=lambda student: student[2]) 
+
+sorted_driver_slots = sorted(driver_slots, key=lambda item: date_to_timestamp(item[3] +' ' +convert_ap_pm(item[3], item[1].split('-')[0])))
+
+#=====================
+
+for slot in sorted_driver_slots:
 # ['Sunrise Pre-trip ALPHA', '6:30 AM - 7:00 AM', 'Jorge Fernando Flores', '2017/9/18']
     date = slot[3]
     time_split= slot[1].split('-')
@@ -127,12 +144,17 @@ for slot in driver_slots:
 
     timestamp_start = date_to_timestamp(start)
     timestamp_end = date_to_timestamp(end)
-
-    
+    # print '-------------->'
+    # print slot
+    # print timestamp_to_date(timestamp_start),timestamp_to_date(timestamp_end)
+    # print '-------------->'
     flag1 = 0
     for key in route_dic.keys():
-        # print key
-        if route.find(key) != -1 and key != 'L': #route match [['2017/9/5 7:23','763'], ['2017/9/5 7:23','763'] ,['2017/9/5 7:23','763']]
+        #if route.find(key) != -1 and key != 'L': #route match [['2017/9/5 7:23','763'], ['2017/9/5 7:23','763'] ,['2017/9/5 7:23','763']]
+        if route.find(key) != -1 and key != 'L' and len(key) + route.index(key) == len(route):
+            # print len(route)
+            # print route.index(key)
+            print key
             flag1 =1
             candidate = []
             breakpoint = []
@@ -145,7 +167,7 @@ for slot in driver_slots:
             if len(candidate) > 0:
                 flag = date_to_timestamp(candidate[0][0])
                 flag_index = 0
-                for i in range(len(candidate)):
+                for i in range(len(candidate)):#from all smaller ones find the biggest one index as flag_index.
                     if date_to_timestamp(candidate[i][0]) > flag:
                         flag = date_to_timestamp(candidate[i][0])
                         flag_index = i
