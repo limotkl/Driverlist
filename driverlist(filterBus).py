@@ -2,9 +2,7 @@ import types
 import pandas as pd
 import numpy as np
 import datetime
-# import DriverSchedule as ds
 import operator
-
 import os
 import csv
 import time
@@ -46,7 +44,6 @@ def get_result(sorted_list):
 
             start = date + ' ' + convert_ap_pm(date, time_split[0])
             end = date + ' ' + convert_ap_pm(date, time_split[1])
-
             timestamp_start = date_to_timestamp(start)
             timestamp_end = date_to_timestamp(end)
             flag1 = 0
@@ -128,101 +125,120 @@ def convert_ap_pm(date, time):
     return res
 
 
-virtialRouteTable = []
-route_dic = {}
-with open(VIRTUAL,'rU') as csvfile:
-        csvreader1 = csv.reader(csvfile)
-        for row in csvreader1:
-            str1 = ''
-            if '\xef\xbb\xbf' in row[0]:
-                str1 = row[0].replace('\xef\xbb\xbf','')
-                row[0] = str1
-                virtialRouteTable.append(row)
-            else:
-                virtialRouteTable.append(row)
-
-#build dictionary
-for i in range(1,len(virtialRouteTable)):
-    if virtialRouteTable[i][4].find("Details:") != -1:
-        a = virtialRouteTable[i][4].split("Details: ")
-        if len(a) > 1:
-            temp = [virtialRouteTable[i][0],virtialRouteTable[i][2]]#add time and BUS number e.g['2017/9/5 7:23','763']
-            x = a[1].upper()
-            route_dic.setdefault(x, []).append(temp)
 
 
-#===================================================================
+if __name__=="__main__":
+    virtialRouteTable = []
+    route_dic = {}
+    with open(VIRTUAL,'rU') as csvfile:
+            csvreader1 = csv.reader(csvfile)
+            for row in csvreader1:
+                str1 = ''
+                if '\xef\xbb\xbf' in row[0]:
+                    str1 = row[0].replace('\xef\xbb\xbf','')
+                    row[0] = str1
+                    virtialRouteTable.append(row)
+                else:
+                    virtialRouteTable.append(row)
 
-#driver dictionary part
-#=======================
-virtualTable = []
-dic_driver = {}
-with open(DRIVER,'rU') as csvfile:
-        csvreader = csv.reader(csvfile)
-        for row in csvreader:
-            str1 = ''
-            if '\xef\xbb\xbf' in row[0]:
-                str1 = row[0].replace('\xef\xbb\xbf','')
-                row[0] = str1
-                virtualTable.append(row)
-            else:
-                virtualTable.append(row)
+    #build dictionary
+    for i in range(1,len(virtialRouteTable)):
+        if virtialRouteTable[i][4].find("Details:") != -1:
+            a = virtialRouteTable[i][4].split("Details: ")
+            if len(a) > 1:
+                temp = [virtialRouteTable[i][0],virtialRouteTable[i][2]]#add time and BUS number e.g['2017/9/5 7:23','763']
+                x = a[1].upper()
+                route_dic.setdefault(x, []).append(temp)
 
-for i in range(1,len(virtualTable)):
-#['Jorge Fernando Flores', '2017/09/11', 'Monday', 'Sunrise Pre-trip ALPHA', '6:30 AM-7:00 AM', '0.5', 'details', '']
-    if virtualTable[i][7] == '':
-        temp =[]
-        newtime = virtualTable[i][4].replace('-',' - ')
-        temp.extend([virtualTable[i][3], newtime ,virtualTable[i][0],virtualTable[i][1]])
-        # print temp[2]
-        # print temp
-        x = temp[2].replace(' ','')
-        if x.isalpha():
-            dic_driver.setdefault(temp[2], []).append(temp)
-    elif virtualTable[i][7].find('Unapproved') == -1:
-        if virtualTable[i][7].find(':') != -1:
-            new = virtualTable[i][7].split(': ')
-            newDriver = new[1].replace('.','')
+
+    #===================================================================
+
+    #driver dictionary part
+    #=======================
+    virtualTable = []
+    dic_driver = {}
+    with open(DRIVER,'rU') as csvfile:
+            csvreader = csv.reader(csvfile)
+            for row in csvreader:
+                str1 = ''
+                if '\xef\xbb\xbf' in row[0]:
+                    str1 = row[0].replace('\xef\xbb\xbf','')
+                    row[0] = str1
+                    virtualTable.append(row)
+                else:
+                    virtualTable.append(row)
+
+    for i in range(1,len(virtualTable)):
+    #['Jorge Fernando Flores', '2017/09/11', 'Monday', 'Sunrise Pre-trip ALPHA', '6:30 AM-7:00 AM', '0.5', 'details', '']
+        if virtualTable[i][7] == '':
             temp =[]
             newtime = virtualTable[i][4].replace('-',' - ')
-            temp.extend([virtualTable[i][3], newtime ,newDriver,virtualTable[i][1]])
+            temp.extend([virtualTable[i][3], newtime ,virtualTable[i][0],virtualTable[i][1]])
             # print temp[2]
             # print temp
             x = temp[2].replace(' ','')
             if x.isalpha():
                 dic_driver.setdefault(temp[2], []).append(temp)
-"""
-('Jorge Fernando Flores', [['Sunrise Pre-trip ALPHA', '6:30 AM - 7:00 AM', 'Jorge Fernando Flores', '2017/9/18'], ['Sunrise Pre-trip ALPHA', '6:30 AM - 7:00 AM', 'Jorge Fernando Flores', '2017/9/20']])
-"""
-sorted_list1 = sorted(dic_driver.items(), key=lambda item: len(item[1]), reverse=True)
+        elif virtualTable[i][7].find('Unapproved') == -1:
+            if virtualTable[i][7].find(':') != -1:
+                new = virtualTable[i][7].split(': ')
+                newDriver = new[1].replace('.','')
+                temp =[]
+                newtime = virtualTable[i][4].replace('-',' - ')
+                temp.extend([virtualTable[i][3], newtime ,newDriver,virtualTable[i][1]])
+                # print temp[2]
+                # print temp
+                x = temp[2].replace(' ','')
+                if x.isalpha():
+                    dic_driver.setdefault(temp[2], []).append(temp)
+    """
+    ('Jorge Fernando Flores', [['Sunrise Pre-trip ALPHA', '6:30 AM - 7:00 AM', 'Jorge Fernando Flores', '2017/9/18'], ['Sunrise Pre-trip ALPHA', '6:30 AM - 7:00 AM', 'Jorge Fernando Flores', '2017/9/20']])
+    """
+    sorted_list1 = sorted(dic_driver.items(), key=lambda item: len(item[1]), reverse=True)
 
-"""
-result: dictionary that has everything
-exist_result : dictionary that only has bus [0,1,2,3,4,5,6,7]
-"""
-result,exist_result= get_result(sorted_list1)
+    """
+    result: dictionary that has everything
+    exist_result : dictionary that only has bus [0,1,2,3,4,5,6,7]
+    """
+    result,exist_result= get_result(sorted_list1)
 
-sorted_result = sorted(exist_result.items(), key=lambda item: len(item[1]), reverse=True)
-# print driver ID ,driver name, and bus set
-print '======================='
-for i in range(len(sorted_result)):
-    print '--',i,'--'
-    bus = []
-    for x in sorted_result[i][1]:
-        bus.append(x[-1])
-        if isinstance(x[-2],int):
-            bus.append(x[-2])
-    print len(bus),"times",bus
-    print "set:",list(set(bus))
-    print sorted_result[i][0]
-    print '-------------->' 
-print '======================='
+    sorted_result = sorted(exist_result.items(), key=lambda item: len(item[1]), reverse=True)
+    # print driver ID ,driver name, and bus set
 
-# print chosen driver's slots
-for x in sorted_result[WHICH_DRIVER][1]:
-    print x
-    print '-------------->'
+    fo = open("driverlist_file.txt", "w")
+    #print '======================='
+    fo.write('======================='+'\n')
+    for i in range(len(sorted_result)):
+        #print '--',i,'--'
+        fo.write('--'+str(i)+'--'+'\n')
+        bus = []
+        for x in sorted_result[i][1]:
+            bus.append(x[-1])
+            if isinstance(x[-2],int):
+                bus.append(x[-2])
+
+        #print len(bus),"times",bus
+        fo.write(str(len(bus))+" times "+str(bus)+'\n')
+        #print "set: ",list(set(bus))
+        fo.write(str(set(bus))+'\n')
+        #print sorted_result[i][0]
+        fo.write(sorted_result[i][0]+'\n')
+        #print '-------------->' 
+        fo.write('-------------->'+'\n')
+    #print '======================='
+    fo.write('======================='+'\n')
 
 
-#===========
+    # for x in sorted_result[WHICH_DRIVER][1]:
+    #     print x
+    #     print '-------------->'
+
+    for i in range(len(sorted_result)):
+        fo.write('========== ' + 'driver ' + str(i) +'  '+sorted_result[i][0] +' =========='+'\n')
+        for x in sorted_result[i][1]:
+            fo.write(str(x)+'\n'+'-------------->'+'\n')
+        fo.write('\n\n\n')
+    print " \n driver info write into 'driverlist_file.txt', go check it for details.\n"
+    fo.close()
+    #===========
 
