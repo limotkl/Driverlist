@@ -13,7 +13,7 @@ from math import radians, cos, sin, asin, sqrt, fabs
 # '02597a5b9e75cf6c' 0
 # '02596c2b9e85bf69' 1
 # '023d6dfce95b3997' 4
-# '024a09d94ab01756' ------2
+# '024a09d94ab01756' ------2---  025C411F85BAD2AC
 # '024a0c2d305eb3cc' 6
 # '0249cc55455bc6ad' 3
 # '01ef64e4dec54025' 5
@@ -25,15 +25,69 @@ SHUTTLE_INDEX = [0,1,2,3,4,5,6,7]
 PHONE_ID = ["02597a5b9e75cf6c", "02596c2b9e85bf69", "024a09d94ab01756","0249cc55455bc6ad",
             "023d6dfce95b3997","01ef64e4dec54025","024a0c2d305eb3cc","025391f6de955621"]
 NUM_OF_SHUTTLE = 8
-
-# UULat = 42.086942806500474
-# UULon = -75.96704414865724
+STEP = 30
 
 UULat = 42.08687988
 UULon = -75.96715875
 
 UUendLat = 42.08687988
 UUendLon = -75.96715875
+
+Acc_dic = {}
+with open('Accelerometer.csv','rU') as csvfile:
+	csvreader1 = csv.reader(csvfile)
+	print 'reading Accelerometer.csv...'
+	for row in csvreader1:
+		str1 = ''
+		if '\xef\xbb\xbf' in row[0]:
+			str1 = row[0].replace('\xef\xbb\xbf','')
+			row[0] = str1
+			Acc_dic.setdefault(row[1], []).append(row)
+		else:
+			Acc_dic.setdefault(row[1], []).append(row)
+print 'read Accelerometer.csv end'
+
+Gry_dic = {}
+with open('Gyroscope.csv','rU') as csvfile:
+	csvreader2 = csv.reader(csvfile)
+	print 'reading Gyroscope.csv...'
+	for row in csvreader2:
+		str1 = ''
+		if '\xef\xbb\xbf' in row[0]:
+			str1 = row[0].replace('\xef\xbb\xbf','')
+			row[0] = str1
+			Gry_dic.setdefault(row[1], []).append(row)
+		else:
+			Gry_dic.setdefault(row[1], []).append(row)
+print 'read Gyroscope.csv end'
+
+Mag_dic = {}
+with open('Magnetometer.csv','rU') as csvfile:
+	csvreader3 = csv.reader(csvfile)
+	print 'reading Magnetometer.csv...'
+	for row in csvreader3:
+		str1 = ''
+		if '\xef\xbb\xbf' in row[0]:
+			str1 = row[0].replace('\xef\xbb\xbf','')
+			row[0] = str1
+			Mag_dic.setdefault(row[1], []).append(row)
+		else:
+			Mag_dic.setdefault(row[1], []).append(row)
+print 'read Magnetometer.csv end'
+
+Mot_dic = {}
+with open('MotionState.csv','rU') as csvfile:
+	csvreader4 = csv.reader(csvfile)
+	print 'reading MotionState.csv...'
+	for row in csvreader4:
+		str1 = ''
+		if '\xef\xbb\xbf' in row[0]:
+			str1 = row[0].replace('\xef\xbb\xbf','')
+			row[0] = str1
+			Mot_dic.setdefault(row[1], []).append(row)
+		else:
+			Mot_dic.setdefault(row[1], []).append(row)
+print 'read MotionState.csv end'
 
 def hav(theta):
 	s = sin(theta / 2)
@@ -71,45 +125,46 @@ def convert_ap_pm(date, time):
     # print temp
     res = pd.to_datetime(temp).strftime('%-H:%-M')
     return res
-def get_other (startime,endtime,busnumber,routename,filename,kind,day):
+def get_other (startime,endtime,busnumber,filename,wfilename,kind,index):
 	"""
 	8663665	024a09d94ab01756	1505882567526.00	0.337697774	0.083825685	9.649534225
 	"""
+	if index == 1:
+		temp_dic = Acc_dic
+	if index == 2:
+		temp_dic = Gry_dic
+	if index == 3:
+		temp_dic = Mag_dic
+	if index == 4:
+		temp_dic = Mot_dic
+
+	flag1 = 0
 	print 'geting ' + kind +'info......'
 	print '===infunction==='
 	print timestamp_to_date(startime)
 	print timestamp_to_date(endtime)
 	print '===infunction_end==='
-	temp_dic = {}
-	with open(filename,'rU') as csvfile:
-	        csvreader1 = csv.reader(csvfile)
-	        for row in csvreader1:
-	            str1 = ''
-	            if '\xef\xbb\xbf' in row[0]:
-	                str1 = row[0].replace('\xef\xbb\xbf','')
-	                row[0] = str1
-	                temp_dic.setdefault(row[1], []).append(row)
-	            else:
-	            	temp_dic.setdefault(row[1], []).append(row)
-	flag = 0
-	with open(routename+ kind + day + ".csv","w") as csvfile:
+	with open(wfilename + kind + ".csv","w") as csvfile:
 		ww = csv.writer(csvfile)
 		if temp_dic.has_key(PHONE_ID[busnumber]):
 			buslist = temp_dic[PHONE_ID[bus]]
-			for i in range(0,len(buslist),30):
+			for i in range(0,len(buslist),STEP):
 				y = int(buslist[i][2])/1000
 				# x = timestamp_to_date(y)
 				if y >= startime and y <= endtime:
 					row = [(buslist[i])]
 					ww.writerows(row)
-					flag = 1
-			if falg == 0:
+					flag1 = 1
+			if flag1 == 0:
+				ww.writerows([('no data during this time slot! in '+ filename)])
 				print 'no data during this time slot! in '+ filename
-
 		else:
+			whichbus = str(busnumber)
+			ww.writerows([('In Sep bus '+ whichbus +' has no data')])
 			print 'This bus has no data in' + filename + '!'
 
 def Wfile(dic,schedule,bus,date):
+
 	for slot in schedule:
 		subroute = slot[2].replace('/','')
 		wfilename = date.replace('/','.') + '-' + slot[0] + subroute
@@ -129,7 +184,7 @@ def Wfile(dic,schedule,bus,date):
 			newendStamp = timestamp_end
 			print timestamp_to_date(timestamp_start)
 			print timestamp_to_date(timestamp_end)
-			for i in range(0,len(buslist),30):
+			for i in range(0,len(buslist),STEP):
 				y = int(buslist[i][2])/1000
 				if y >= timestamp_start and y < timestamp_end:
 					#lastone = buslist[i]
@@ -163,7 +218,7 @@ def Wfile(dic,schedule,bus,date):
 				print 'newnewnewnewnew'
 				print timestamp_to_date(newstartStamp)
 				print timestamp_to_date(newendStamp)
-				for i in range(0,len(buslist),30):
+				for i in range(0,len(buslist),STEP):
 					y = int(buslist[i][2])/1000
 					x = timestamp_to_date(y)
 					if y >= newstartStamp and y <= newendStamp:
@@ -175,6 +230,8 @@ def Wfile(dic,schedule,bus,date):
 						flag = 1
 
 				if flag == 0:
+					writer.writerows([('no data during this time slot!')])
+					webR.writerows([('no data during this time slot!')])
 					print 'no data during this time slot!'
 				if flag == 1:
 					print 'result'
@@ -184,8 +241,14 @@ def Wfile(dic,schedule,bus,date):
 					print get_distance(UUendLat,UUendLon,float(temp[-1][3]),float(temp[-1][4]))
 				print 'data write to '+wfilename+".csv"+'\n'
 			else:
+				string = str(bus)
+				writer.writerows([('in Sep BUS '+string+' do not have data')])
+				webR.writerows([('in Sep BUS '+string+' do not have data')])
 				print 'This bus has no data in GPS file!'
-		#get_other(newstartStamp,newendStamp,bus,route,filename,kind,date)
+		get_other(newstartStamp,newendStamp,bus,'Accelerometer.csv',wfilename,'_Acc',1)
+		get_other(newstartStamp,newendStamp,bus,'Gyroscope.csv',wfilename,'_Gyr',2)
+		get_other(newstartStamp,newendStamp,bus,'Magnetometer.csv',wfilename,'_Mag',3)
+		get_other(newstartStamp,newendStamp,bus,'MotionState.csv',wfilename,'_Mot',4)
 		
 def getDict(day,Stime):
 	wb = load_workbook("Fall.xlsx")
@@ -237,6 +300,7 @@ if __name__=="__main__":
 	GPSdic = {}
 	with open('Gps.csv','rU') as csvfile:
 		csvreader = csv.reader(csvfile)
+		print 'reading GPS.csv...'
 		for row in csvreader:
 			str1 = ''
 			if '\xef\xbb\xbf' in row[0]:
@@ -245,8 +309,9 @@ if __name__=="__main__":
 				GPSdic.setdefault(row[1], []).append(row)
 			else:
 				GPSdic.setdefault(row[1], []).append(row)
-	# for key in GPSdic.keys():
-	# 	print key
+	print 'read GPS.csv end'
+	for key in GPSdic.keys():
+		print key
 
 	"""
 	['6704101', '024a09d94ab01756', '1505667614326', '42.10743427', '-75.98704116', '0', '0', '0']
@@ -256,19 +321,22 @@ if __name__=="__main__":
 	"""
 	['Eve CHI', '10:00 PM - 12:30 AM', 'Administrator', '2017/09/12', 7] result from driverlist
 	"""
-	# source = [['Sunset EPSILON', '5:00 PM - 7:15 PM', 'Administrator', '2017/09/11', 5, 'EPSILON'],
-	# ['Mid GAMMA', '11:00 AM - 1:00 PM', 'Administrator', '2017/09/12', 5, 'GAMMA'],
-	# ['Mid CS B', '11:15 AM - 1:30 PM', 'Administrator', '2017/09/12', 2, 'CS B'],
-	# ['Eve CHI', '10:00 PM - 12:30 AM', 'Administrator', '2017/09/12', 7, 'CHI'],
-	# ['Noon CS A', '1:00 PM - 3:00 PM', 'Administrator', '2017/09/13', 0, 'CS A'],
-	# ['Sunset EPSILON', '5:00 PM - 7:15 PM', 'Administrator', '2017/09/13', 4, 'EPSILON'],
-	# ['Mid CS B', '11:15 AM - 1:30 PM', 'Administrator', '2017/09/15', 1, 'CS B'],
-	# ['Afternoon BETA', '2:00 PM - 4:15 PM', 'Administrator', '2017/09/15', 4, 'BETA'],
-	# ['Sunset CS C', '6:00 PM - 8:00 PM', 'Administrator', '2017/09/15', 3, 'CS C'],
-	# ['PM BETA', '6:45 PM - 9:30 PM', 'Administrator', '2017/09/15', 4, 'BETA'],
-	# ['Sunset CS B partial 2', '7:15 PM - 7:30 PM', 'Administrator', '2017/09/15', 1, 'CS B'] ]
+	source = [ ['Sunset EPSILON', '5:00 PM - 7:15 PM', 'Administrator', '2017/09/11', 5, 'EPSILON'],
+['Mid GAMMA', '11:00 AM - 1:00 PM', 'Administrator', '2017/09/12', 5, 'GAMMA'],
+['Mid CS B', '11:15 AM - 1:30 PM', 'Administrator', '2017/09/12', 2, 'CS B'],
+['Noon CS A', '1:00 PM - 3:00 PM', 'Administrator', '2017/09/13', 0, 'CS A'],
+['Sunset EPSILON', '5:00 PM - 7:15 PM', 'Administrator', '2017/09/13', 4, 'EPSILON'],
+['Mid CS C', '11:30 AM - 1:20 PM', 'Administrator', '2017/09/14', 0, 'CS C'],
+['Mid CS C', '11:52 AM - 1:20 PM', 'Administrator', '2017/09/14', 3, 'CS C'],
+['Mid CS B', '11:15 AM - 1:30 PM', 'Administrator', '2017/09/15', 1, 'CS B'],
+['Afternoon BETA', '2:00 PM - 4:15 PM', 'Administrator', '2017/09/15', 4, 'BETA'],
+['Sunset CS C', '6:00 PM - 8:00 PM', 'Administrator', '2017/09/15', 3, 'CS C'],
+['PM BETA', '6:45 PM - 9:30 PM', 'Administrator', '2017/09/15', 4, 'BETA'],
+['Sunset CS B partial 2', '7:15 PM - 7:30 PM', 'Administrator', '2017/09/15', 1, 'CS B'] ]
 
-	source = [['Sunset EPSILON', '5:00 PM - 7:15 PM', 'Administrator', '2017/09/11', 5, 'EPSILON']]
+
+
+
 	for test in source:
 		result = []
 		bus = test[-2]
